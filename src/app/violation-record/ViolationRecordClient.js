@@ -13,7 +13,7 @@ import { PageLayout } from '../../components/PageLayout';
 import debounce from 'lodash/debounce';
 import { useAuth } from '../../utils/authContext';
 
-const ViolationModal = ({
+const ViolationModal = React.memo(({
   isOpen,
   onClose,
   selectedViolation,
@@ -102,7 +102,9 @@ const ViolationModal = ({
       </Fade>
     </Modal>
   );
-};
+});
+
+ViolationModal.displayName = 'ViolationModal';
 
 const ViolationRecordClient = ({ initialViolations }) => {
   const { user } = useAuth();
@@ -285,5 +287,7 @@ const ViolationRecordClient = ({ initialViolations }) => {
     </PageLayout>
   );
 };
+
+ViolationRecordClient.displayName = 'ViolationRecordClient';
 
 export default ViolationRecordClient;

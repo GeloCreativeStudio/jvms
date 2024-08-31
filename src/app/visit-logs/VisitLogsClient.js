@@ -128,4 +128,6 @@ const VisitLogsClient = ({ initialVisitLogs }) => {
   );
 };
 
+VisitLogsClient.displayName = 'VisitLogsClient';
+
 export default VisitLogsClient;

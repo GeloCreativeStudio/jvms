@@ -212,4 +212,6 @@ const VisitorManagementClient = ({ initialVisitors }) => {
   );
 };
 
+VisitorManagementClient.displayName = 'VisitorManagementClient';
+
 export default VisitorManagementClient;

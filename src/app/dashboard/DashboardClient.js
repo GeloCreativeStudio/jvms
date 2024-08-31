@@ -529,4 +529,6 @@ const DashboardClient = () => {
   );
 };
 
+DashboardClient.displayName = 'DashboardClient';
+
 export default DashboardClient;

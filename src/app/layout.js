@@ -160,11 +160,34 @@ export default function RootLayout({ children }) {
         <AuthProvider>
           <ThemeProvider theme={customTheme}>
             <CssBaseline />
+            <div dangerouslySetInnerHTML={{ __html: '<div id="app-root"></div>' }} />
             <AppContent>
               {children}
             </AppContent>
           </ThemeProvider>
         </AuthProvider>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              const appRoot = document.getElementById('app-root');
+              if (appRoot) {
+                appRoot.innerHTML = '';
+                const observer = new MutationObserver((mutations) => {
+                  for (const mutation of mutations) {
+                    if (mutation.type === 'childList') {
+                      for (const node of mutation.addedNodes) {
+                        if (node.nodeType === Node.ELEMENT_NODE) {
+                          appRoot.appendChild(node);
+                        }
+                      }
+                    }
+                  }
+                });
+                observer.observe(document.body, { childList: true });
+              }
+            `,
+          }}
+        />
       </body>
     </html>
   );

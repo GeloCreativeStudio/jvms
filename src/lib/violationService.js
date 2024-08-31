@@ -61,3 +61,19 @@ export const searchVisitors = async (searchTerm) => {
     throw error;
   }
 };
+
+export const searchVisitorById = async (id) => {
+  try {
+    const { data, error } = await supabase
+      .from('visitors')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error searching visitor by ID:', error);
+    throw error;
+  }
+};
