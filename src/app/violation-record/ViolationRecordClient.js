@@ -134,15 +134,14 @@ const ViolationRecordClient = ({ initialViolations }) => {
   const [visitorOptions, setVisitorOptions] = useState([]);
 
   const debouncedSearchVisitors = useCallback(
-    debounce(async (term) => {
+    (term) => {
       if (term.length > 2) {
-        const visitors = await searchVisitors(term);
-        setVisitorOptions(visitors);
+        searchVisitors(term).then(visitors => setVisitorOptions(visitors));
       } else {
         setVisitorOptions([]);
       }
-    }, 300),
-    []
+    },
+    [setVisitorOptions]
   );
 
   useEffect(() => {

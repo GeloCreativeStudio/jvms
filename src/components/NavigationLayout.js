@@ -164,7 +164,7 @@ const NavigationLayout = React.memo(({ children }) => {
         ))}
       </List>
     </>
-  ), [desktopOpen, user, pathname, handleDrawerToggle, menuItems]);
+  ), [desktopOpen, user, pathname, handleDrawerToggle, menuItems, isDesktop, theme.transitions]);
 
   const bottomNav = useMemo(() => (
     <BottomNavigation
@@ -260,7 +260,7 @@ const NavigationLayout = React.memo(({ children }) => {
         );
       })}
     </BottomNavigation>
-  ), [pathname, menuItems]);
+  ), [pathname, menuItems, theme.zIndex.appBar]);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>

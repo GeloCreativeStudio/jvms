@@ -37,6 +37,7 @@ const CustomToolbar = React.memo(() => {
     </GridToolbarContainer>
   );
 });
+CustomToolbar.displayName = 'CustomToolbar';
 
 const LoadingOverlay = React.memo(() => (
   <GridOverlay>
@@ -48,6 +49,7 @@ const LoadingOverlay = React.memo(() => (
     </Box>
   </GridOverlay>
 ));
+LoadingOverlay.displayName = 'LoadingOverlay';
 
 const CustomNoRowsOverlay = React.memo(() => (
   <GridOverlay>
@@ -57,6 +59,7 @@ const CustomNoRowsOverlay = React.memo(() => (
     </Box>
   </GridOverlay>
 ));
+CustomNoRowsOverlay.displayName = 'CustomNoRowsOverlay';
 
 const CustomNoResultsOverlay = React.memo(() => (
   <GridOverlay>
@@ -66,6 +69,7 @@ const CustomNoResultsOverlay = React.memo(() => (
     </Box>
   </GridOverlay>
 ));
+CustomNoResultsOverlay.displayName = 'CustomNoResultsOverlay';
 
 const DataTable = ({
   columns,

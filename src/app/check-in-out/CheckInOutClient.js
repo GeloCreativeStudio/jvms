@@ -194,16 +194,7 @@ const QRCodeScannerModal = ({ isOpen, onClose, onScanSuccess }) => {
   const [error, setError] = useState(null);
   const [isInitializing, setIsInitializing] = useState(true);
 
-  useEffect(() => {
-    if (isOpen) {
-      initializeCameras();
-    } else {
-      stopScanner();
-    }
-    return () => stopScanner();
-  }, [isOpen]);
-
-  const initializeCameras = async () => {
+  const initializeCameras = useCallback(async () => {
     try {
       const devices = await Html5Qrcode.getCameras();
       setCameras(devices);
@@ -218,15 +209,9 @@ const QRCodeScannerModal = ({ isOpen, onClose, onScanSuccess }) => {
     } finally {
       setIsInitializing(false);
     }
-  };
+  }, []);
 
-  useEffect(() => {
-    if (selectedCamera) {
-      startScanner();
-    }
-  }, [selectedCamera]);
-
-  const startScanner = async () => {
+  const startScanner = useCallback(async () => {
     if (scanner) {
       await stopScanner();
     }
@@ -249,9 +234,9 @@ const QRCodeScannerModal = ({ isOpen, onClose, onScanSuccess }) => {
       console.error("Error starting scanner:", err);
       setError("Failed to start the scanner. Please try again.");
     }
-  };
+  }, [selectedCamera, onScanSuccess, scanner, stopScanner]);
 
-  const stopScanner = async () => {
+  const stopScanner = useCallback(async () => {
     if (scanner) {
       try {
         await scanner.stop();
@@ -260,7 +245,22 @@ const QRCodeScannerModal = ({ isOpen, onClose, onScanSuccess }) => {
         console.error("Error stopping scanner:", err);
       }
     }
-  };
+  }, [scanner]);
+
+  useEffect(() => {
+    if (isOpen) {
+      initializeCameras();
+    } else {
+      stopScanner();
+    }
+    return () => stopScanner();
+  }, [isOpen, initializeCameras, stopScanner]);
+
+  useEffect(() => {
+    if (selectedCamera) {
+      startScanner();
+    }
+  }, [selectedCamera, startScanner]);
 
   const switchCamera = () => {
     const currentIndex = cameras.findIndex(camera => camera.id === selectedCamera);

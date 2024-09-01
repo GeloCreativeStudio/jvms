@@ -224,12 +224,12 @@ const SettingsClient = () => {
         aria-describedby="alert-dialog-description"
       >
         <DialogTitle id="alert-dialog-title">
-          {"Are you sure you want to delete your account?"}
+          Are you sure you want to delete your account?
         </DialogTitle>
         <DialogContent>
           <DialogContentText id="alert-dialog-description">
             This action cannot be undone. All of your data will be permanently deleted.
-            To confirm, please type "DELETE" in the field below.
+            To confirm, please type &quot;DELETE&quot; in the field below.
           </DialogContentText>
           <TextField
             fullWidth

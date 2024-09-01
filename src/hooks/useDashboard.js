@@ -42,7 +42,7 @@ export const useDashboard = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [dateRange]);
+  }, []); // Tanggalin ang dateRange sa dependency array kung hindi ito ginagamit sa loob ng function
 
   useEffect(() => {
     fetchDashboardData();
