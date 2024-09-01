@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useState, useEffect, useContext, useMemo } from 'react';
+import React, { createContext, useState, useEffect, useContext, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase, getSession } from './supabaseClient';
 
@@ -89,5 +89,12 @@ export const useAuth = () => {
   if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
-  return context;
+
+  const requireAuth = useCallback((router, isAuthenticated, loading) => {
+    if (!loading && !isAuthenticated) {
+      router.replace('/login');
+    }
+  }, []);
+
+  return { ...context, requireAuth };
 };

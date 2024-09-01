@@ -208,7 +208,7 @@ const ViolationRecordClient = ({ initialViolations }) => {
     }
   }, [setFormData]);
 
-  const containerVariants = {
+  const containerVariants = useMemo(() => ({
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
@@ -217,9 +217,9 @@ const ViolationRecordClient = ({ initialViolations }) => {
         staggerChildren: 0.1,
       },
     },
-  };
+  }), []);
 
-  const itemVariants = {
+  const itemVariants = useMemo(() => ({
     hidden: { y: 20, opacity: 0 },
     visible: {
       y: 0,
@@ -229,7 +229,7 @@ const ViolationRecordClient = ({ initialViolations }) => {
         stiffness: 100,
       },
     },
-  };
+  }), []);
 
   return (
     <PageLayout title="Violation Records">
@@ -289,4 +289,4 @@ const ViolationRecordClient = ({ initialViolations }) => {
 
 ViolationRecordClient.displayName = 'ViolationRecordClient';
 
-export default ViolationRecordClient;
+export default React.memo(ViolationRecordClient);

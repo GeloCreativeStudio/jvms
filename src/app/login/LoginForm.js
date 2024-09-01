@@ -1,8 +1,8 @@
 'use client'
 
-import React, { useState, useCallback } from 'react';
-import { motion } from 'framer-motion'; // Add this import
-import { styled } from '@mui/material/styles'; // Add this import
+import React, { useState, useCallback, useMemo } from 'react';
+import { motion } from 'framer-motion';
+import { styled } from '@mui/material/styles';
 import { Typography, TextField, Button, Box, InputAdornment, IconButton, Paper, Link } from '@mui/material';
 import { Visibility, VisibilityOff, AccountCircle, Lock } from '@mui/icons-material';
 import { useAuth } from '../../utils/authContext';
@@ -36,7 +36,7 @@ const LoginForm = () => {
 
   const isSubmitDisabled = !email || !password || isLoading;
 
-  const containerVariants = {
+  const containerVariants = useMemo(() => ({
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
@@ -45,9 +45,9 @@ const LoginForm = () => {
         staggerChildren: 0.1,
       },
     },
-  };
+  }), []);
 
-  const itemVariants = {
+  const itemVariants = useMemo(() => ({
     hidden: { opacity: 0, y: 20 },
     visible: {
       opacity: 1,
@@ -57,7 +57,91 @@ const LoginForm = () => {
         stiffness: 100,
       },
     },
-  };
+  }), []);
+
+  const renderLogo = useCallback(() => (
+    <Image
+      src="/BJMP-icon.png"
+      alt="BJMP MIMAROPA Logo"
+      width={isMobile ? 100 : 150}
+      height={isMobile ? 100 : 150}
+      priority
+      style={{ marginBottom: '16px' }}
+    />
+  ), [isMobile]);
+
+  const renderForm = useCallback(() => (
+    <form onSubmit={handleSubmit} noValidate>
+      <motion.div variants={itemVariants}>
+        <CustomTextField
+          label="Personnel ID"
+          fullWidth
+          margin="normal"
+          value={email}
+          onChange={handleEmailChange}
+          required
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <AccountCircle />
+              </InputAdornment>
+            ),
+          }}
+          variant="outlined"
+          autoComplete="username"
+        />
+      </motion.div>
+      <motion.div variants={itemVariants}>
+        <CustomTextField
+          label="Password"
+          type={showPassword ? 'text' : 'password'}
+          fullWidth
+          margin="normal"
+          value={password}
+          onChange={handlePasswordChange}
+          required
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <Lock />
+              </InputAdornment>
+            ),
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton
+                  aria-label="toggle password visibility"
+                  onClick={handleClickShowPassword}
+                  edge="end"
+                >
+                  {showPassword ? <VisibilityOff /> : <Visibility />}
+                </IconButton>
+              </InputAdornment>
+            ),
+          }}
+          variant="outlined"
+          autoComplete="current-password"
+        />
+      </motion.div>
+      <motion.div variants={itemVariants}>
+        <Button 
+          type="submit" 
+          variant="contained" 
+          fullWidth 
+          sx={{ mt: 2, borderRadius: 2 }}
+          disabled={isSubmitDisabled}
+        >
+          {isLoading ? 'Logging in...' : 'Login'}
+        </Button>
+      </motion.div>
+      {error && (
+        <motion.div variants={itemVariants}>
+          <Typography color="error" sx={{ mt: 2, textAlign: 'center' }}>
+            {error}
+          </Typography>
+        </motion.div>
+      )}
+    </form>
+  ), [email, password, showPassword, isLoading, error, handleEmailChange, handlePasswordChange, handleSubmit, handleClickShowPassword, isSubmitDisabled, itemVariants]);
 
   return (
     <motion.div
@@ -75,14 +159,7 @@ const LoginForm = () => {
         <Paper elevation={3} sx={{ p: isMobile ? 3 : 4, borderRadius: 4 }}>
           <motion.div variants={itemVariants}>
             <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 3 }}>
-              <Image
-                src="/BJMP-icon.png"
-                alt="BJMP MIMAROPA Logo"
-                width={isMobile ? 100 : 150}
-                height={isMobile ? 100 : 150}
-                priority
-                style={{ marginBottom: '16px' }}
-              />
+              {renderLogo()}
               <Typography variant={isMobile ? "h5" : "h4"} component="h1" gutterBottom align="center" sx={{ fontWeight: 'bold' }}>
                 BJMP VMS
               </Typography>
@@ -91,76 +168,7 @@ const LoginForm = () => {
               </Typography>
             </Box>
           </motion.div>
-          <form onSubmit={handleSubmit} noValidate>
-            <motion.div variants={itemVariants}>
-              <CustomTextField
-                label="Personnel ID"
-                fullWidth
-                margin="normal"
-                value={email}
-                onChange={handleEmailChange}
-                required
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <AccountCircle />
-                    </InputAdornment>
-                  ),
-                }}
-                variant="outlined"
-                autoComplete="username"
-              />
-            </motion.div>
-            <motion.div variants={itemVariants}>
-              <CustomTextField
-                label="Password"
-                type={showPassword ? 'text' : 'password'}
-                fullWidth
-                margin="normal"
-                value={password}
-                onChange={handlePasswordChange}
-                required
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Lock />
-                    </InputAdornment>
-                  ),
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        aria-label="toggle password visibility"
-                        onClick={handleClickShowPassword}
-                        edge="end"
-                      >
-                        {showPassword ? <VisibilityOff /> : <Visibility />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-                variant="outlined"
-                autoComplete="current-password"
-              />
-            </motion.div>
-            <motion.div variants={itemVariants}>
-              <Button 
-                type="submit" 
-                variant="contained" 
-                fullWidth 
-                sx={{ mt: 2, borderRadius: 2 }}
-                disabled={isSubmitDisabled}
-              >
-                {isLoading ? 'Logging in...' : 'Login'}
-              </Button>
-            </motion.div>
-            {error && (
-              <motion.div variants={itemVariants}>
-                <Typography color="error" sx={{ mt: 2, textAlign: 'center' }}>
-                  {error}
-                </Typography>
-              </motion.div>
-            )}
-          </form>
+          {renderForm()}
           <motion.div variants={itemVariants}>
             <Typography variant="caption" sx={{ mt: 3, display: 'block', textAlign: 'center', fontSize: isMobile ? '0.7rem' : '0.8rem', fontWeight: 'medium', color: theme.palette.text.secondary, bgcolor: theme.palette.background.paper, p: 1, borderRadius: 1 }}>
               This is an official BJMP Visitor Management System. Unauthorized access is strictly prohibited and punishable by law.
@@ -177,4 +185,4 @@ const LoginForm = () => {
   );
 };
 
-export default LoginForm;
+export default React.memo(LoginForm);

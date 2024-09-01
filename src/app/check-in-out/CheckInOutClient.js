@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { 
   TextField, Button, Box, Grid, Modal, Fade, Backdrop, CircularProgress, Typography, IconButton, Tooltip, Autocomplete
 } from '@mui/material';
@@ -13,7 +13,149 @@ import { motion } from 'framer-motion';
 import { searchVisitors, searchVisitorById } from '../../lib/violationService';
 import { useAuth } from '../../utils/authContext';
 
-function CheckInOutForm({ type, onSubmit }) {
+const QRCodeScannerModal = React.memo(({ isOpen, onClose, onScanSuccess }) => {
+  const [scanner, setScanner] = useState(null);
+  const [cameras, setCameras] = useState([]);
+  const [selectedCamera, setSelectedCamera] = useState(null);
+  const [error, setError] = useState(null);
+  const [isInitializing, setIsInitializing] = useState(true);
+
+  const initializeCameras = useCallback(async () => {
+    try {
+      const devices = await Html5Qrcode.getCameras();
+      setCameras(devices);
+      if (devices.length > 0) {
+        setSelectedCamera(devices[0].id);
+      } else {
+        setError("No camera devices found.");
+      }
+    } catch (err) {
+      console.error("Error getting cameras:", err);
+      setError("Unable to access camera. Please check permissions and try again.");
+    } finally {
+      setIsInitializing(false);
+    }
+  }, []);
+
+  const startScanner = useCallback(async () => {
+    if (scanner) {
+      await stopScanner();
+    }
+    try {
+      const html5QrCode = new Html5Qrcode("qr-reader");
+      await html5QrCode.start(
+        selectedCamera,
+        {
+          fps: 10,
+          qrbox: { width: 250, height: 250 },
+        },
+        onScanSuccess,
+        (errorMessage) => {
+          console.log(errorMessage);
+        }
+      );
+      setScanner(html5QrCode);
+      setError(null);
+    } catch (err) {
+      console.error("Error starting scanner:", err);
+      setError("Failed to start the scanner. Please try again.");
+    }
+  }, [selectedCamera, onScanSuccess, scanner, stopScanner]);
+
+  const stopScanner = useCallback(async () => {
+    if (scanner) {
+      try {
+        await scanner.stop();
+        setScanner(null);
+      } catch (err) {
+        console.error("Error stopping scanner:", err);
+      }
+    }
+  }, [scanner]);
+
+  useEffect(() => {
+    if (isOpen) {
+      initializeCameras();
+    } else {
+      stopScanner();
+    }
+    return () => stopScanner();
+  }, [isOpen, initializeCameras, stopScanner]);
+
+  useEffect(() => {
+    if (selectedCamera) {
+      startScanner();
+    }
+  }, [selectedCamera, startScanner]);
+
+  const switchCamera = useCallback(() => {
+    const currentIndex = cameras.findIndex(camera => camera.id === selectedCamera);
+    const nextIndex = (currentIndex + 1) % cameras.length;
+    setSelectedCamera(cameras[nextIndex].id);
+  }, [cameras, selectedCamera]);
+
+  const handleRetry = useCallback(() => {
+    setError(null);
+    initializeCameras();
+  }, [initializeCameras]);
+
+  return (
+    <Modal open={isOpen} onClose={onClose}>
+      <Box sx={{
+        position: 'absolute',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        width: 300,
+        bgcolor: 'background.paper',
+        boxShadow: 24,
+        p: 4,
+        borderRadius: 2,
+      }}>
+        <IconButton
+          sx={{ position: 'absolute', right: 8, top: 8 }}
+          onClick={onClose}
+        >
+          <Close />
+        </IconButton>
+        <Typography variant="h6" component="h2" gutterBottom>
+          Scan QR Code
+        </Typography>
+        {isInitializing ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
+            <CircularProgress />
+          </Box>
+        ) : error ? (
+          <Box sx={{ mb: 2, textAlign: 'center' }}>
+            <Typography color="error" align="center" sx={{ mb: 1 }}>
+              {error}
+            </Typography>
+            <Button onClick={handleRetry} variant="outlined" size="small">
+              Try Again
+            </Button>
+          </Box>
+        ) : (
+          <>
+            <Box id="qr-reader" sx={{ width: '100%', height: 250, mb: 2 }} />
+            {cameras.length > 1 && (
+              <Tooltip title="Switch Camera">
+                <IconButton onClick={switchCamera} sx={{ mb: 2 }}>
+                  <CameraRear />
+                </IconButton>
+              </Tooltip>
+            )}
+          </>
+        )}
+        <Button onClick={onClose} variant="contained" fullWidth>
+          Close
+        </Button>
+      </Box>
+    </Modal>
+  );
+});
+QRCodeScannerModal.displayName = 'QRCodeScannerModal';
+
+const CheckInOutForm = React.memo(({ type, onSubmit }) => {
   const [visitorId, setVisitorId] = useState('');
   const [purpose, setPurpose] = useState('');
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
@@ -69,13 +211,13 @@ function CheckInOutForm({ type, onSubmit }) {
     onSubmit(visitorId, purpose);
   }, [onSubmit, visitorId, purpose]);
 
-  const handleVisitorChange = (event, newValue) => {
+  const handleVisitorChange = useCallback((event, newValue) => {
     if (newValue) {
       setVisitorId(newValue.id);
     } else {
       setVisitorId('');
     }
-  };
+  }, []);
 
   return (
     <Box sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', flexGrow: 1 }}>
@@ -185,148 +327,8 @@ function CheckInOutForm({ type, onSubmit }) {
       )}
     </Box>
   );
-}
-
-const QRCodeScannerModal = ({ isOpen, onClose, onScanSuccess }) => {
-  const [scanner, setScanner] = useState(null);
-  const [cameras, setCameras] = useState([]);
-  const [selectedCamera, setSelectedCamera] = useState(null);
-  const [error, setError] = useState(null);
-  const [isInitializing, setIsInitializing] = useState(true);
-
-  const initializeCameras = useCallback(async () => {
-    try {
-      const devices = await Html5Qrcode.getCameras();
-      setCameras(devices);
-      if (devices.length > 0) {
-        setSelectedCamera(devices[0].id);
-      } else {
-        setError("No camera devices found.");
-      }
-    } catch (err) {
-      console.error("Error getting cameras:", err);
-      setError("Unable to access camera. Please check permissions and try again.");
-    } finally {
-      setIsInitializing(false);
-    }
-  }, []);
-
-  const startScanner = useCallback(async () => {
-    if (scanner) {
-      await stopScanner();
-    }
-    try {
-      const html5QrCode = new Html5Qrcode("qr-reader");
-      await html5QrCode.start(
-        selectedCamera,
-        {
-          fps: 10,
-          qrbox: { width: 250, height: 250 },
-        },
-        onScanSuccess,
-        (errorMessage) => {
-          console.log(errorMessage);
-        }
-      );
-      setScanner(html5QrCode);
-      setError(null);
-    } catch (err) {
-      console.error("Error starting scanner:", err);
-      setError("Failed to start the scanner. Please try again.");
-    }
-  }, [selectedCamera, onScanSuccess, scanner, stopScanner]);
-
-  const stopScanner = useCallback(async () => {
-    if (scanner) {
-      try {
-        await scanner.stop();
-        setScanner(null);
-      } catch (err) {
-        console.error("Error stopping scanner:", err);
-      }
-    }
-  }, [scanner]);
-
-  useEffect(() => {
-    if (isOpen) {
-      initializeCameras();
-    } else {
-      stopScanner();
-    }
-    return () => stopScanner();
-  }, [isOpen, initializeCameras, stopScanner]);
-
-  useEffect(() => {
-    if (selectedCamera) {
-      startScanner();
-    }
-  }, [selectedCamera, startScanner]);
-
-  const switchCamera = () => {
-    const currentIndex = cameras.findIndex(camera => camera.id === selectedCamera);
-    const nextIndex = (currentIndex + 1) % cameras.length;
-    setSelectedCamera(cameras[nextIndex].id);
-  };
-
-  const handleRetry = () => {
-    setError(null);
-    initializeCameras();
-  };
-
-  return (
-    <Modal open={isOpen} onClose={onClose}>
-      <Box sx={{
-        position: 'absolute',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        width: 300,
-        bgcolor: 'background.paper',
-        boxShadow: 24,
-        p: 4,
-        borderRadius: 2,
-      }}>
-        <IconButton
-          sx={{ position: 'absolute', right: 8, top: 8 }}
-          onClick={onClose}
-        >
-          <Close />
-        </IconButton>
-        <Typography variant="h6" component="h2" gutterBottom>
-          Scan QR Code
-        </Typography>
-        {isInitializing ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
-            <CircularProgress />
-          </Box>
-        ) : error ? (
-          <Box sx={{ mb: 2, textAlign: 'center' }}>
-            <Typography color="error" align="center" sx={{ mb: 1 }}>
-              {error}
-            </Typography>
-            <Button onClick={handleRetry} variant="outlined" size="small">
-              Try Again
-            </Button>
-          </Box>
-        ) : (
-          <>
-            <Box id="qr-reader" sx={{ width: '100%', height: 250, mb: 2 }} />
-            {cameras.length > 1 && (
-              <Tooltip title="Switch Camera">
-                <IconButton onClick={switchCamera} sx={{ mb: 2 }}>
-                  <CameraRear />
-                </IconButton>
-              </Tooltip>
-            )}
-          </>
-        )}
-        <Button onClick={onClose} variant="contained" fullWidth>
-          Close
-        </Button>
-      </Box>
-    </Modal>
-  );
-};
+});
+CheckInOutForm.displayName = 'CheckInOutForm';
 
 const CheckInOutClient = () => {
   const { user } = useAuth();
@@ -353,7 +355,7 @@ const CheckInOutClient = () => {
 
   const messageToShow = message || localMessage;
 
-  const containerVariants = {
+  const containerVariants = useMemo(() => ({
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
@@ -361,9 +363,9 @@ const CheckInOutClient = () => {
         staggerChildren: 0.2,
       },
     },
-  };
+  }), []);
 
-  const itemVariants = {
+  const itemVariants = useMemo(() => ({
     hidden: { y: 20, opacity: 0 },
     visible: {
       y: 0,
@@ -373,7 +375,7 @@ const CheckInOutClient = () => {
         stiffness: 100,
       },
     },
-  };
+  }), []);
 
   const handleCheckIn = useCallback((visitorId, purpose) => {
     if (!user) {
@@ -466,5 +468,6 @@ const CheckInOutClient = () => {
     </PageLayout>
   );
 };
+CheckInOutClient.displayName = 'CheckInOutClient';
 
-export default CheckInOutClient;
+export default React.memo(CheckInOutClient);

@@ -1,4 +1,6 @@
-import React, { useMemo, useState } from "react";
+'use client'
+
+import React, { useMemo, useState, useCallback } from "react";
 import {
   Box,
   Typography,
@@ -23,8 +25,8 @@ import LoginIcon from "@mui/icons-material/Login";
 import LogoutIcon from "@mui/icons-material/Logout";
 import WarningIcon from "@mui/icons-material/Warning";
 import RefreshIcon from "@mui/icons-material/Refresh";
-import { formatDateTime } from "../../utils/dateUtils"; // Add this import
-import { motion } from "framer-motion"; // Add this import
+import { formatDateTime } from "../../utils/dateUtils";
+import { motion } from "framer-motion";
 
 const RECENT_VISITS_COLUMNS = [
   { id: "visitor_name", label: "Visitor Name" },
@@ -77,7 +79,7 @@ const DashboardClient = () => {
     
     const sortAndAdjustWeeklyVisits = (visits) => {
       if (!visits || !visits.weeklyData || visits.weeklyData.length === 0) {
-        console.log('Weekly visits is empty or not an array:', visits); // Debug log
+        console.log('Weekly visits is empty or not an array:', visits);
         return { data: [], maxValue: 0 };
       }
 
@@ -85,14 +87,12 @@ const DashboardClient = () => {
       const dayOfWeek = today.getDay();
       const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
       
-      // Sort the visits to start from the current day
       const sortedVisits = [...visits.weeklyData].sort((a, b) => {
         const aIndex = daysOfWeek.indexOf(a.name);
         const bIndex = daysOfWeek.indexOf(b.name);
         return ((aIndex - dayOfWeek + 7) % 7) - ((bIndex - dayOfWeek + 7) % 7);
       });
       
-      // Mark the current day and calculate total
       return {
         data: sortedVisits.map((day, index) => ({
           ...day,
@@ -105,15 +105,20 @@ const DashboardClient = () => {
 
     const { data: weeklyVisitsData, maxValue } = sortAndAdjustWeeklyVisits(dashboardData.weeklyVisits || { weeklyData: [], maxValue: 0 });
 
-    const result = {
+    return {
       ...dashboardData,
       weeklyVisits: weeklyVisitsData,
       weeklyVisitsMaxValue: maxValue
     };
-
-    console.log('Processed dashboard data:', result); // Debug log
-    return result;
   }, [dashboardData]);
+
+  const handleBarHover = useCallback((event) => {
+    if (event.type === "cell") {
+      setHoveredBar(event);
+    } else {
+      setHoveredBar(null);
+    }
+  }, []);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -137,12 +142,20 @@ const DashboardClient = () => {
     },
   };
 
-  // Use consistent colors for charts and labels
   const visitorTypeColors = {
     "PDL Visitor": theme.palette.primary.main,
     "Service Provider": theme.palette.secondary.main,
     "Personnel": theme.palette.warning.main,
   };
+
+  const chartColors = [
+    theme.palette.primary.main,
+    theme.palette.secondary.main,
+    theme.palette.warning.main,
+    theme.palette.error.main,
+    theme.palette.info.main,
+    theme.palette.success.main,
+  ];
 
   if (error) {
     return (
@@ -232,16 +245,6 @@ const DashboardClient = () => {
     recentVisits = [],
     violators = 0,
   } = processedData || {};
-
-  // Use MUI default colors for charts
-  const chartColors = [
-    theme.palette.primary.main,
-    theme.palette.secondary.main,
-    theme.palette.warning.main,
-    theme.palette.error.main,
-    theme.palette.info.main,
-    theme.palette.success.main,
-  ];
 
   return (
     <PageLayout title="Dashboard">
@@ -333,12 +336,12 @@ const DashboardClient = () => {
                           yAxis={[
                             {
                               scaleType: "linear",
-                              max: Math.max(2, Math.ceil(processedData.weeklyVisitsMaxValue)), // Ensure at least 2 ticks
+                              max: Math.max(2, Math.ceil(processedData.weeklyVisitsMaxValue)),
                               tickLabelStyle: {
                                 fontSize: isMobile ? 8 : 11,
                               },
-                              valueFormatter: (value) => Math.floor(value).toString(), // Only show integer values
-                              tickNumber: Math.min(5, Math.max(2, Math.ceil(processedData.weeklyVisitsMaxValue))), // Adjust number of ticks
+                              valueFormatter: (value) => Math.floor(value).toString(),
+                              tickNumber: Math.min(5, Math.max(2, Math.ceil(processedData.weeklyVisitsMaxValue))),
                               min: 0,
                             },
                           ]}
@@ -385,13 +388,7 @@ const DashboardClient = () => {
                               },
                             },
                           }}
-                          onMouseMove={(event) => {
-                            if (event.type === "cell") {
-                              setHoveredBar(event);
-                            } else {
-                              setHoveredBar(null);
-                            }
-                          }}
+                          onMouseMove={handleBarHover}
                           onMouseLeave={() => setHoveredBar(null)}
                           tooltip={{
                             trigger: "item",
@@ -531,4 +528,4 @@ const DashboardClient = () => {
 
 DashboardClient.displayName = 'DashboardClient';
 
-export default DashboardClient;
+export default React.memo(DashboardClient);

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { PageLayout } from '../../components/PageLayout';
 import { 
@@ -35,7 +35,7 @@ const SettingsClient = () => {
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
 
-  const handleDeleteAccount = async () => {
+  const handleDeleteAccount = useCallback(async () => {
     try {
       if (deleteConfirmation === 'DELETE') {
         await deleteAccount();
@@ -47,9 +47,9 @@ const SettingsClient = () => {
       dispatch({ type: 'SET_MESSAGE', payload: { text: `Error deleting account: ${error.message}`, severity: 'error' } });
     }
     setOpenDeleteDialog(false);
-  };
+  }, [deleteAccount, deleteConfirmation, dispatch]);
 
-  const containerVariants = {
+  const containerVariants = useMemo(() => ({
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
@@ -58,9 +58,9 @@ const SettingsClient = () => {
         staggerChildren: 0.1,
       },
     },
-  };
+  }), []);
 
-  const itemVariants = {
+  const itemVariants = useMemo(() => ({
     hidden: { y: 20, opacity: 0 },
     visible: {
       y: 0,
@@ -70,9 +70,9 @@ const SettingsClient = () => {
         stiffness: 100,
       },
     },
-  };
+  }), []);
 
-  const formElementVariants = {
+  const formElementVariants = useMemo(() => ({
     hidden: { x: -10, opacity: 0 },
     visible: {
       x: 0,
@@ -82,7 +82,7 @@ const SettingsClient = () => {
         stiffness: 100,
       },
     },
-  };
+  }), []);
 
   if (!user) {
     return (
@@ -263,4 +263,4 @@ const SettingsClient = () => {
   );
 };
 
-export default SettingsClient;
+export default React.memo(SettingsClient);

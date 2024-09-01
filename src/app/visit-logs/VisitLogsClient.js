@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import DataTable from '../../components/DataTable';
 import { SnackbarAlert } from '../../components/SnackbarAlert';
@@ -22,7 +22,7 @@ const VisitLogsClient = ({ initialVisitLogs }) => {
     handleRowsPerPageChange,
   } = useVisitLogs(initialVisitLogs);
 
-  const columns = [
+  const columns = useMemo(() => [
     { 
       id: 'name', 
       label: 'Name', 
@@ -62,9 +62,9 @@ const VisitLogsClient = ({ initialVisitLogs }) => {
       })
     },
     { id: 'purpose', label: 'Purpose' },
-  ];
+  ], []);
 
-  const containerVariants = {
+  const containerVariants = useMemo(() => ({
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
@@ -72,9 +72,9 @@ const VisitLogsClient = ({ initialVisitLogs }) => {
         duration: 0.5,
       },
     },
-  };
+  }), []);
 
-  const tableVariants = {
+  const tableVariants = useMemo(() => ({
     hidden: { y: 20, opacity: 0 },
     visible: {
       y: 0,
@@ -85,7 +85,11 @@ const VisitLogsClient = ({ initialVisitLogs }) => {
         delay: 0.2,
       },
     },
-  };
+  }), []);
+
+  const handleSnackbarClose = useCallback(() => {
+    setSnackbar({ ...snackbar, open: false });
+  }, [snackbar, setSnackbar]);
 
   if (!user) {
     return (
@@ -120,7 +124,7 @@ const VisitLogsClient = ({ initialVisitLogs }) => {
             open={snackbar.open}
             message={snackbar.message}
             severity={snackbar.severity}
-            onClose={() => setSnackbar({ ...snackbar, open: false })}
+            onClose={handleSnackbarClose}
           />
         </Box>
       </motion.div>
@@ -130,4 +134,4 @@ const VisitLogsClient = ({ initialVisitLogs }) => {
 
 VisitLogsClient.displayName = 'VisitLogsClient';
 
-export default VisitLogsClient;
+export default React.memo(VisitLogsClient);

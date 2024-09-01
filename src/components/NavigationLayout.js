@@ -67,8 +67,9 @@ const MenuItem = React.memo(({ item, isSelected, isDesktop, desktopOpen }) => {
 MenuItem.displayName = 'MenuItem';
 
 const NavigationLayout = React.memo(({ children }) => {
+  const { user, isAuthenticated } = useAuth();
   const pathname = usePathname();
-  const { user, signOut } = useAuth();
+  const { signOut } = useAuth();
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up('lg'));
   const isSmUp = useMediaQuery(theme.breakpoints.up('sm'));
@@ -261,6 +262,10 @@ const NavigationLayout = React.memo(({ children }) => {
       })}
     </BottomNavigation>
   ), [pathname, menuItems, theme.zIndex.appBar]);
+
+  if (!isAuthenticated) {
+    return children;
+  }
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>

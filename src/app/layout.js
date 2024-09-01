@@ -3,7 +3,7 @@ import React from 'react';
 import { AuthProvider } from '../utils/authContext';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
-import AppContent from '../components/AppContent';
+import NavigationLayout from '../components/NavigationLayout';
 
 const customTheme = createTheme({
   palette: {
@@ -160,34 +160,11 @@ export default function RootLayout({ children }) {
         <AuthProvider>
           <ThemeProvider theme={customTheme}>
             <CssBaseline />
-            <div dangerouslySetInnerHTML={{ __html: '<div id="app-root"></div>' }} />
-            <AppContent>
+            <NavigationLayout>
               {children}
-            </AppContent>
+            </NavigationLayout>
           </ThemeProvider>
         </AuthProvider>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              const appRoot = document.getElementById('app-root');
-              if (appRoot) {
-                appRoot.innerHTML = '';
-                const observer = new MutationObserver((mutations) => {
-                  for (const mutation of mutations) {
-                    if (mutation.type === 'childList') {
-                      for (const node of mutation.addedNodes) {
-                        if (node.nodeType === Node.ELEMENT_NODE) {
-                          appRoot.appendChild(node);
-                        }
-                      }
-                    }
-                  }
-                });
-                observer.observe(document.body, { childList: true });
-              }
-            `,
-          }}
-        />
       </body>
     </html>
   );

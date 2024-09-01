@@ -1,7 +1,7 @@
 'use client'
 
-import React from 'react';
-import { motion } from 'framer-motion'; // Add this import
+import React, { useMemo, useCallback } from 'react';
+import { motion } from 'framer-motion';
 import { PageLayout } from '../../components/PageLayout';
 import DataTable from '../../components/DataTable';
 import { SnackbarAlert } from '../../components/SnackbarAlert';
@@ -33,7 +33,7 @@ const VisitorManagementClient = ({ initialVisitors }) => {
     setSnackbar
   } = useVisitorManagement(initialVisitors);
 
-  const columns = [
+  const columns = useMemo(() => [
     { id: 'name', label: 'Name', render: (row) => row.name || 'N/A' },
     { id: 'contact', label: 'Contact', render: (row) => row.contact || 'N/A' },
     { 
@@ -71,9 +71,9 @@ const VisitorManagementClient = ({ initialVisitors }) => {
         </>
       ),
     },
-  ];
+  ], [handleEdit, handleDelete]);
 
-  const containerVariants = {
+  const containerVariants = useMemo(() => ({
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
@@ -81,9 +81,9 @@ const VisitorManagementClient = ({ initialVisitors }) => {
         staggerChildren: 0.1,
       },
     },
-  };
+  }), []);
 
-  const itemVariants = {
+  const itemVariants = useMemo(() => ({
     hidden: { y: 20, opacity: 0 },
     visible: {
       y: 0,
@@ -93,7 +93,11 @@ const VisitorManagementClient = ({ initialVisitors }) => {
         stiffness: 100,
       },
     },
-  };
+  }), []);
+
+  const handleSnackbarClose = useCallback(() => {
+    setSnackbar({ ...snackbar, open: false });
+  }, [snackbar, setSnackbar]);
 
   return (
     <PageLayout title="Visitor Management">
@@ -204,7 +208,7 @@ const VisitorManagementClient = ({ initialVisitors }) => {
             open={snackbar.open}
             message={snackbar.message}
             severity={snackbar.severity}
-            onClose={() => setSnackbar({ ...snackbar, open: false })}
+            onClose={handleSnackbarClose}
           />
         </motion.div>
       </motion.div>
@@ -214,4 +218,4 @@ const VisitorManagementClient = ({ initialVisitors }) => {
 
 VisitorManagementClient.displayName = 'VisitorManagementClient';
 
-export default VisitorManagementClient;
+export default React.memo(VisitorManagementClient);
