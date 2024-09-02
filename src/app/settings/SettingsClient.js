@@ -11,7 +11,6 @@ import {
 import { Visibility, VisibilityOff, DeleteForever, AccountCircle, VpnKey } from '@mui/icons-material';
 import { useAuth } from '../../utils/authContext';
 import { useSettings } from '../../hooks/useSettings';
-import { SnackbarAlert } from '../../components/SnackbarAlert';
 
 const SettingsClient = () => {
   const { user } = useAuth();
@@ -34,6 +33,7 @@ const SettingsClient = () => {
 
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [deleteConfirmation, setDeleteConfirmation] = useState('');
+  const [confirmationModal, setConfirmationModal] = useState({ open: false, message: '', onConfirm: null });
 
   const handleDeleteAccount = useCallback(async () => {
     try {
@@ -244,7 +244,11 @@ const SettingsClient = () => {
         <DialogActions>
           <Button onClick={() => setOpenDeleteDialog(false)}>Cancel</Button>
           <Button 
-            onClick={handleDeleteAccount} 
+            onClick={() => setConfirmationModal({
+              open: true,
+              message: 'Are you sure you want to delete your account?',
+              onConfirm: handleDeleteAccount
+            })} 
             color="error" 
             disabled={deleteConfirmation !== 'DELETE'}
           >
@@ -253,12 +257,50 @@ const SettingsClient = () => {
         </DialogActions>
       </Dialog>
 
-      <SnackbarAlert
+      <Dialog
         open={!!message.text}
-        message={message.text}
-        severity={message.severity}
         onClose={() => dispatch({ type: 'SET_MESSAGE', payload: { text: '', severity: 'info' } })}
-      />
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">
+          Notification
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            {message.text}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => dispatch({ type: 'SET_MESSAGE', payload: { text: '', severity: 'info' } })} color="primary">
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={confirmationModal.open}
+        onClose={() => setConfirmationModal({ open: false, message: '', onConfirm: null })}
+        aria-labelledby="confirmation-dialog-title"
+        aria-describedby="confirmation-dialog-description"
+      >
+        <DialogTitle id="confirmation-dialog-title">
+          Confirmation
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="confirmation-dialog-description">
+            {confirmationModal.message}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmationModal({ open: false, message: '', onConfirm: null })} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={() => { confirmationModal.onConfirm(); setConfirmationModal({ open: false, message: '', onConfirm: null }); }} color="primary">
+            Confirm
+          </Button>
+        </DialogActions>
+      </Dialog>
     </PageLayout>
   );
 };

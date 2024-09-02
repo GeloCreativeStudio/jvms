@@ -1,13 +1,12 @@
 'use client'
 
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback, useState } from 'react';
 import { motion } from 'framer-motion';
 import { PageLayout } from '../../components/PageLayout';
 import DataTable from '../../components/DataTable';
-import { SnackbarAlert } from '../../components/SnackbarAlert';
 import {
   Button, Select, MenuItem, FormControl, InputLabel, Box, Modal, Fade, Backdrop,
-  TextField
+  TextField, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions
 } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import { useVisitorManagement } from '../../hooks/useVisitorManagement';
@@ -65,7 +64,11 @@ const VisitorManagementClient = ({ initialVisitors }) => {
           <Button onClick={() => handleEdit(row)} size="small" color="primary">
             Edit
           </Button>
-          <Button onClick={() => handleDelete(row.id)} size="small" color="error">
+          <Button onClick={() => setConfirmationModal({
+            open: true,
+            message: `Are you sure you want to delete the visitor "${row.name}"? This action cannot be undone.`,
+            onConfirm: () => handleDelete(row.id)
+          })} size="small" color="error">
             Delete
           </Button>
         </>
@@ -94,6 +97,8 @@ const VisitorManagementClient = ({ initialVisitors }) => {
       },
     },
   }), []);
+
+  const [confirmationModal, setConfirmationModal] = useState({ open: false, message: '', onConfirm: null });
 
   const handleSnackbarClose = useCallback(() => {
     setSnackbar({ ...snackbar, open: false });
@@ -203,14 +208,50 @@ const VisitorManagementClient = ({ initialVisitors }) => {
           </Fade>
         </Modal>
 
-        <motion.div variants={itemVariants}>
-          <SnackbarAlert
-            open={snackbar.open}
-            message={snackbar.message}
-            severity={snackbar.severity}
-            onClose={handleSnackbarClose}
-          />
-        </motion.div>
+        <Dialog
+          open={snackbar.open}
+          onClose={handleSnackbarClose}
+          aria-labelledby="alert-dialog-title"
+          aria-describedby="alert-dialog-description"
+        >
+          <DialogTitle id="alert-dialog-title">
+            Notification
+          </DialogTitle>
+          <DialogContent>
+            <DialogContentText id="alert-dialog-description">
+              {snackbar.message}
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleSnackbarClose} color="primary">
+              Close
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        <Dialog
+          open={confirmationModal.open}
+          onClose={() => setConfirmationModal({ open: false, message: '', onConfirm: null })}
+          aria-labelledby="confirmation-dialog-title"
+          aria-describedby="confirmation-dialog-description"
+        >
+          <DialogTitle id="confirmation-dialog-title">
+            Confirmation
+          </DialogTitle>
+          <DialogContent>
+            <DialogContentText id="confirmation-dialog-description">
+              {confirmationModal.message}
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setConfirmationModal({ open: false, message: '', onConfirm: null })} color="primary">
+              Cancel
+            </Button>
+            <Button onClick={() => { confirmationModal.onConfirm(); setConfirmationModal({ open: false, message: '', onConfirm: null }); }} color="primary">
+              Confirm
+            </Button>
+          </DialogActions>
+        </Dialog>
       </motion.div>
     </PageLayout>
   );

@@ -1,10 +1,9 @@
 'use client'
 
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback, useState } from 'react';
 import { motion } from 'framer-motion';
 import DataTable from '../../components/DataTable';
-import { SnackbarAlert } from '../../components/SnackbarAlert';
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button } from '@mui/material';
 import { useVisitLogs } from '../../hooks/useVisitLogs';
 import { formatTime } from '../../utils/dateUtils';
 import { PageLayout } from '../../components/PageLayout';
@@ -87,6 +86,8 @@ const VisitLogsClient = ({ initialVisitLogs }) => {
     },
   }), []);
 
+  const [confirmationModal, setConfirmationModal] = useState({ open: false, message: '', onConfirm: null });
+
   const handleSnackbarClose = useCallback(() => {
     setSnackbar({ ...snackbar, open: false });
   }, [snackbar, setSnackbar]);
@@ -120,12 +121,50 @@ const VisitLogsClient = ({ initialVisitLogs }) => {
             />
           </motion.div>
 
-          <SnackbarAlert
+          <Dialog
             open={snackbar.open}
-            message={snackbar.message}
-            severity={snackbar.severity}
             onClose={handleSnackbarClose}
-          />
+            aria-labelledby="alert-dialog-title"
+            aria-describedby="alert-dialog-description"
+          >
+            <DialogTitle id="alert-dialog-title">
+              Notification
+            </DialogTitle>
+            <DialogContent>
+              <DialogContentText id="alert-dialog-description">
+                {snackbar.message}
+              </DialogContentText>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleSnackbarClose} color="primary">
+                Close
+              </Button>
+            </DialogActions>
+          </Dialog>
+
+          <Dialog
+            open={confirmationModal.open}
+            onClose={() => setConfirmationModal({ open: false, message: '', onConfirm: null })}
+            aria-labelledby="confirmation-dialog-title"
+            aria-describedby="confirmation-dialog-description"
+          >
+            <DialogTitle id="confirmation-dialog-title">
+              Confirmation
+            </DialogTitle>
+            <DialogContent>
+              <DialogContentText id="confirmation-dialog-description">
+                {confirmationModal.message}
+              </DialogContentText>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setConfirmationModal({ open: false, message: '', onConfirm: null })} color="primary">
+                Cancel
+              </Button>
+              <Button onClick={() => { confirmationModal.onConfirm(); setConfirmationModal({ open: false, message: '', onConfirm: null }); }} color="primary">
+                Confirm
+              </Button>
+            </DialogActions>
+          </Dialog>
         </Box>
       </motion.div>
     </PageLayout>

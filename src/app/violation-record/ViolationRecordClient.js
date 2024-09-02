@@ -3,8 +3,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import DataTable from '../../components/DataTable';
-import { SnackbarAlert } from '../../components/SnackbarAlert';
-import { Button, Box, Modal, Fade, Backdrop, TextField, Autocomplete, FormControl, InputLabel, Select, MenuItem } from '@mui/material';
+import { Button, Box, Modal, Fade, Backdrop, TextField, Autocomplete, FormControl, InputLabel, Select, MenuItem, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import { useViolationRecord } from '../../hooks/useViolationRecord';
 import { formatDate } from '../../utils/dateUtils';
@@ -132,6 +131,7 @@ const ViolationRecordClient = ({ initialViolations }) => {
 
   const [visitorSearchTerm, setVisitorSearchTerm] = useState('');
   const [visitorOptions, setVisitorOptions] = useState([]);
+  const [confirmationModal, setConfirmationModal] = useState({ open: false, message: '', onConfirm: null });
 
   const debouncedSearchVisitors = useCallback(
     (term) => {
@@ -184,7 +184,11 @@ const ViolationRecordClient = ({ initialViolations }) => {
           <Button onClick={() => handleEdit(row)} size="small" color="primary">
             Edit
           </Button>
-          <Button onClick={() => handleDelete(row.id)} size="small" color="error">
+          <Button onClick={() => setConfirmationModal({
+            open: true,
+            message: `Are you sure you want to delete the violation for visitor "${row.visitor?.name}"? This action cannot be undone.`,
+            onConfirm: () => handleDelete(row.id)
+          })} size="small" color="error">
             Delete
           </Button>
         </>
@@ -231,6 +235,10 @@ const ViolationRecordClient = ({ initialViolations }) => {
     },
   }), []);
 
+  const handleSnackbarClose = useCallback(() => {
+    setSnackbar({ ...snackbar, open: false });
+  }, [snackbar, setSnackbar]);
+
   return (
     <PageLayout title="Violation Records">
       <motion.div
@@ -274,14 +282,50 @@ const ViolationRecordClient = ({ initialViolations }) => {
           setVisitorSearchTerm={setVisitorSearchTerm}
         />
 
-        <motion.div variants={itemVariants}>
-          <SnackbarAlert
-            open={snackbar.open}
-            message={snackbar.message}
-            severity={snackbar.severity}
-            onClose={() => setSnackbar({ ...snackbar, open: false })}
-          />
-        </motion.div>
+        <Dialog
+          open={snackbar.open}
+          onClose={handleSnackbarClose}
+          aria-labelledby="alert-dialog-title"
+          aria-describedby="alert-dialog-description"
+        >
+          <DialogTitle id="alert-dialog-title">
+            Notification
+          </DialogTitle>
+          <DialogContent>
+            <DialogContentText id="alert-dialog-description">
+              {snackbar.message}
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleSnackbarClose} color="primary">
+              Close
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        <Dialog
+          open={confirmationModal.open}
+          onClose={() => setConfirmationModal({ open: false, message: '', onConfirm: null })}
+          aria-labelledby="confirmation-dialog-title"
+          aria-describedby="confirmation-dialog-description"
+        >
+          <DialogTitle id="confirmation-dialog-title">
+            Confirmation
+          </DialogTitle>
+          <DialogContent>
+            <DialogContentText id="confirmation-dialog-description">
+              {confirmationModal.message}
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setConfirmationModal({ open: false, message: '', onConfirm: null })} color="primary">
+              Cancel
+            </Button>
+            <Button onClick={() => { confirmationModal.onConfirm(); setConfirmationModal({ open: false, message: '', onConfirm: null }); }} color="primary">
+              Confirm
+            </Button>
+          </DialogActions>
+        </Dialog>
       </motion.div>
     </PageLayout>
   );

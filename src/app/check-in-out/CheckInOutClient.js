@@ -2,11 +2,10 @@
 
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { 
-  TextField, Button, Box, Grid, Modal, Fade, Backdrop, CircularProgress, Typography, IconButton, Tooltip, Autocomplete
+  TextField, Button, Box, Grid, Modal, Fade, Backdrop, CircularProgress, Typography, IconButton, Tooltip, Autocomplete, Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle
 } from '@mui/material';
 import { QrCodeScanner, ArrowForward, Close, CameraAlt, CameraRear } from '@mui/icons-material';
 import { useCheckInOut } from '../../hooks/useCheckInOut';
-import { SnackbarAlert } from '../../components/SnackbarAlert';
 import { PageLayout } from '../../components/PageLayout';
 import { motion } from 'framer-motion';
 import { searchVisitors, searchVisitorById } from '../../lib/violationService';
@@ -195,6 +194,7 @@ const CheckInOutClient = () => {
   } = useCheckInOut();
 
   const [localMessage, setLocalMessage] = useState({ text: '', severity: 'info' });
+  const [confirmationModal, setConfirmationModal] = useState({ open: false, message: '', onConfirm: null });
 
   const handleSetMessage = useCallback((newMessage) => {
     if (setMessage) {
@@ -204,7 +204,7 @@ const CheckInOutClient = () => {
     }
   }, [setMessage]);
 
-  const handleCloseSnackbar = useCallback(() => {
+  const handleCloseNotification = useCallback(() => {
     handleSetMessage({ text: '', severity: 'info' });
   }, [handleSetMessage]);
 
@@ -237,7 +237,11 @@ const CheckInOutClient = () => {
       handleSetMessage({ text: 'User not authenticated', severity: 'error' });
       return;
     }
-    handleCheckInOut(visitorId, purpose, true);
+    setConfirmationModal({
+      open: true,
+      message: 'Are you sure you want to check in?',
+      onConfirm: () => handleCheckInOut(visitorId, purpose, true)
+    });
   }, [handleCheckInOut, user, handleSetMessage]);
 
   const handleCheckOut = useCallback((visitorId) => {
@@ -245,7 +249,11 @@ const CheckInOutClient = () => {
       handleSetMessage({ text: 'User not authenticated', severity: 'error' });
       return;
     }
-    handleCheckInOut(visitorId, null, false);
+    setConfirmationModal({
+      open: true,
+      message: 'Are you sure you want to check out?',
+      onConfirm: () => handleCheckInOut(visitorId, null, false)
+    });
   }, [handleCheckInOut, user, handleSetMessage]);
 
   return (
@@ -289,12 +297,26 @@ const CheckInOutClient = () => {
           </Grid>
         </Box>
       </motion.div>
-      <SnackbarAlert
-        open={!!(message.text || localMessage.text)}
-        message={message.text || localMessage.text}
-        severity={message.severity || localMessage.severity}
-        onClose={handleCloseSnackbar}
-      />
+      <Dialog
+        open={!!messageToShow.text}
+        onClose={handleCloseNotification}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">
+          Notification
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            {messageToShow.text}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseNotification} color="primary">
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
       <Modal
         open={isLoading}
         closeAfterTransition
@@ -320,6 +342,29 @@ const CheckInOutClient = () => {
           </Box>
         </Fade>
       </Modal>
+      <Dialog
+        open={confirmationModal.open}
+        onClose={() => setConfirmationModal({ open: false, message: '', onConfirm: null })}
+        aria-labelledby="confirmation-dialog-title"
+        aria-describedby="confirmation-dialog-description"
+      >
+        <DialogTitle id="confirmation-dialog-title">
+          Confirmation
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="confirmation-dialog-description">
+            {confirmationModal.message}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmationModal({ open: false, message: '', onConfirm: null })} color="primary">
+            Cancel
+          </Button>
+          <Button onClick={() => { confirmationModal.onConfirm(); setConfirmationModal({ open: false, message: '', onConfirm: null }); }} color="primary">
+            Confirm
+          </Button>
+        </DialogActions>
+      </Dialog>
     </PageLayout>
   );
 };
