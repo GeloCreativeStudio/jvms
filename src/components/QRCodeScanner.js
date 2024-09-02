@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
-import { Box, Button, Typography, Modal } from '@mui/material';
+import { Box, Button, Typography, Modal, IconButton } from '@mui/material';
+import { CameraAlt, CameraRear } from '@mui/icons-material';
 
 const QRCodeScannerModal = ({ isOpen, onClose, onScanSuccess }) => {
   const [error, setError] = useState(null);
+  const [cameraFacing, setCameraFacing] = useState('environment');
   const readerRef = useRef(null);
   const errorTimeoutRef = useRef(null);
 
@@ -14,8 +16,8 @@ const QRCodeScannerModal = ({ isOpen, onClose, onScanSuccess }) => {
       if (readerRef.current) {
         scanner = new Html5Qrcode("reader");
         scanner.start(
-          { facingMode: "environment" },
-          { fps: 10, qrbox: 250 },
+          { facingMode: cameraFacing },
+          { fps: 10, qrbox: { width: 250, height: 350 } }, // Adjusted qrbox size for portrait view
           (decodedText) => {
             console.log('QR Code scanned:', decodedText);
             onScanSuccess(decodedText);
@@ -27,7 +29,7 @@ const QRCodeScannerModal = ({ isOpen, onClose, onScanSuccess }) => {
               setError('Failed to scan. Please try again.');
               errorTimeoutRef.current = setTimeout(() => {
                 errorTimeoutRef.current = null;
-              }, 2000); // Debounce error logging every 2 seconds
+              }, 2000);
             }
           }
         ).catch((err) => {
@@ -35,7 +37,7 @@ const QRCodeScannerModal = ({ isOpen, onClose, onScanSuccess }) => {
           setError('Failed to start scanner. Please check camera permissions.');
         });
       } else {
-        setTimeout(startScanner, 100); // Retry after 100ms if readerRef is not ready
+        setTimeout(startScanner, 100);
       }
     };
 
@@ -53,7 +55,11 @@ const QRCodeScannerModal = ({ isOpen, onClose, onScanSuccess }) => {
         clearTimeout(errorTimeoutRef.current);
       }
     };
-  }, [isOpen, onClose, onScanSuccess]);
+  }, [isOpen, onClose, onScanSuccess, cameraFacing]);
+
+  const toggleCamera = () => {
+    setCameraFacing((prev) => (prev === 'environment' ? 'user' : 'environment'));
+  };
 
   return (
     <Modal open={isOpen} onClose={onClose}>
@@ -71,7 +77,7 @@ const QRCodeScannerModal = ({ isOpen, onClose, onScanSuccess }) => {
         <Typography variant="h6" component="h2" gutterBottom>
           Scan QR Code
         </Typography>
-        <Box sx={{ width: '100%', height: 250, mb: 2 }}>
+        <Box sx={{ width: '100%', height: 350, mb: 2 }}> {/* Adjusted height for portrait view */}
           <div id="reader" ref={readerRef} style={{ width: '100%', height: '100%' }} />
         </Box>
         {error && (
@@ -79,9 +85,14 @@ const QRCodeScannerModal = ({ isOpen, onClose, onScanSuccess }) => {
             {error}
           </Typography>
         )}
-        <Button onClick={onClose} variant="contained" fullWidth>
-          Close
-        </Button>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
+          <IconButton onClick={toggleCamera}>
+            {cameraFacing === 'environment' ? <CameraRear /> : <CameraAlt />}
+          </IconButton>
+          <Button onClick={onClose} variant="contained">
+            Close
+          </Button>
+        </Box>
       </Box>
     </Modal>
   );
