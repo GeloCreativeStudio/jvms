@@ -20,22 +20,17 @@ const QRCodeScannerModal = React.memo(({ isOpen, onClose, onScanSuccess }) => {
   const [error, setError] = useState(null);
   const [isInitializing, setIsInitializing] = useState(true);
 
-  const initializeCameras = useCallback(async () => {
-    try {
-      const devices = await Html5Qrcode.getCameras();
-      setCameras(devices);
-      if (devices.length > 0) {
-        setSelectedCamera(devices[0].id);
-      } else {
-        setError("No camera devices found.");
+  const stopScanner = useCallback(async () => {
+    if (scanner) {
+      try {
+        await scanner.stop();
+        await scanner.clear();
+        setScanner(null);
+      } catch (err) {
+        console.error("Error stopping scanner:", err);
       }
-    } catch (err) {
-      console.error("Error getting cameras:", err);
-      setError("Unable to access camera. Please check permissions and try again.");
-    } finally {
-      setIsInitializing(false);
     }
-  }, []);
+  }, [scanner]);
 
   const startScanner = useCallback(async () => {
     if (scanner) {
@@ -60,18 +55,35 @@ const QRCodeScannerModal = React.memo(({ isOpen, onClose, onScanSuccess }) => {
       console.error("Error starting scanner:", err);
       setError("Failed to start the scanner. Please try again.");
     }
-  }, [selectedCamera, onScanSuccess, scanner, stopScanner]);
+  }, [selectedCamera, onScanSuccess, stopScanner]);
 
-  const stopScanner = useCallback(async () => {
-    if (scanner) {
-      try {
-        await scanner.stop();
-        setScanner(null);
-      } catch (err) {
-        console.error("Error stopping scanner:", err);
+  const initializeCameras = useCallback(async () => {
+    try {
+      const devices = await Html5Qrcode.getCameras();
+      setCameras(devices);
+      if (devices.length > 0) {
+        setSelectedCamera(devices[0].id);
+      } else {
+        setError("No camera devices found.");
       }
+    } catch (err) {
+      console.error("Error getting cameras:", err);
+      setError("Unable to access camera. Please check permissions and try again.");
+    } finally {
+      setIsInitializing(false);
     }
-  }, [scanner]);
+  }, []);
+
+  const switchCamera = useCallback(() => {
+    const currentIndex = cameras.findIndex(camera => camera.id === selectedCamera);
+    const nextIndex = (currentIndex + 1) % cameras.length;
+    setSelectedCamera(cameras[nextIndex].id);
+  }, [cameras, selectedCamera]);
+
+  const handleRetry = useCallback(() => {
+    setError(null);
+    initializeCameras();
+  }, [initializeCameras]);
 
   useEffect(() => {
     if (isOpen) {
@@ -87,17 +99,6 @@ const QRCodeScannerModal = React.memo(({ isOpen, onClose, onScanSuccess }) => {
       startScanner();
     }
   }, [selectedCamera, startScanner]);
-
-  const switchCamera = useCallback(() => {
-    const currentIndex = cameras.findIndex(camera => camera.id === selectedCamera);
-    const nextIndex = (currentIndex + 1) % cameras.length;
-    setSelectedCamera(cameras[nextIndex].id);
-  }, [cameras, selectedCamera]);
-
-  const handleRetry = useCallback(() => {
-    setError(null);
-    initializeCameras();
-  }, [initializeCameras]);
 
   return (
     <Modal open={isOpen} onClose={onClose}>
