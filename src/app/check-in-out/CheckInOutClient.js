@@ -6,155 +6,12 @@ import {
 } from '@mui/material';
 import { QrCodeScanner, ArrowForward, Close, CameraAlt, CameraRear } from '@mui/icons-material';
 import { useCheckInOut } from '../../hooks/useCheckInOut';
-import { Html5Qrcode } from "html5-qrcode";
 import { SnackbarAlert } from '../../components/SnackbarAlert';
 import { PageLayout } from '../../components/PageLayout';
 import { motion } from 'framer-motion';
 import { searchVisitors, searchVisitorById } from '../../lib/violationService';
 import { useAuth } from '../../utils/authContext';
-
-const QRCodeScannerModal = React.memo(({ isOpen, onClose, onScanSuccess }) => {
-  const [scanner, setScanner] = useState(null);
-  const [cameras, setCameras] = useState([]);
-  const [selectedCamera, setSelectedCamera] = useState(null);
-  const [error, setError] = useState(null);
-  const [isInitializing, setIsInitializing] = useState(true);
-
-  const stopScanner = useCallback(async () => {
-    if (scanner) {
-      try {
-        await scanner.stop();
-        await scanner.clear();
-        setScanner(null);
-      } catch (err) {
-        console.error("Error stopping scanner:", err);
-      }
-    }
-  }, [scanner]);
-
-  const startScanner = useCallback(async () => {
-    if (scanner) {
-      await stopScanner();
-    }
-    try {
-      const html5QrCode = new Html5Qrcode("qr-reader");
-      await html5QrCode.start(
-        selectedCamera,
-        {
-          fps: 10,
-          qrbox: { width: 250, height: 250 },
-        },
-        onScanSuccess,
-        (errorMessage) => {
-          console.log(errorMessage);
-        }
-      );
-      setScanner(html5QrCode);
-      setError(null);
-    } catch (err) {
-      console.error("Error starting scanner:", err);
-      setError("Failed to start the scanner. Please try again.");
-    }
-  }, [selectedCamera, onScanSuccess, stopScanner]);
-
-  const initializeCameras = useCallback(async () => {
-    try {
-      const devices = await Html5Qrcode.getCameras();
-      setCameras(devices);
-      if (devices.length > 0) {
-        setSelectedCamera(devices[0].id);
-      } else {
-        setError("No camera devices found.");
-      }
-    } catch (err) {
-      console.error("Error getting cameras:", err);
-      setError("Unable to access camera. Please check permissions and try again.");
-    } finally {
-      setIsInitializing(false);
-    }
-  }, []);
-
-  const switchCamera = useCallback(() => {
-    const currentIndex = cameras.findIndex(camera => camera.id === selectedCamera);
-    const nextIndex = (currentIndex + 1) % cameras.length;
-    setSelectedCamera(cameras[nextIndex].id);
-  }, [cameras, selectedCamera]);
-
-  const handleRetry = useCallback(() => {
-    setError(null);
-    initializeCameras();
-  }, [initializeCameras]);
-
-  useEffect(() => {
-    if (isOpen) {
-      initializeCameras();
-    } else {
-      stopScanner();
-    }
-    return () => stopScanner();
-  }, [isOpen, initializeCameras, stopScanner]);
-
-  useEffect(() => {
-    if (selectedCamera) {
-      startScanner();
-    }
-  }, [selectedCamera, startScanner]);
-
-  return (
-    <Modal open={isOpen} onClose={onClose}>
-      <Box sx={{
-        position: 'absolute',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        width: 300,
-        bgcolor: 'background.paper',
-        boxShadow: 24,
-        p: 4,
-        borderRadius: 2,
-      }}>
-        <IconButton
-          sx={{ position: 'absolute', right: 8, top: 8 }}
-          onClick={onClose}
-        >
-          <Close />
-        </IconButton>
-        <Typography variant="h6" component="h2" gutterBottom>
-          Scan QR Code
-        </Typography>
-        {isInitializing ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', my: 2 }}>
-            <CircularProgress />
-          </Box>
-        ) : error ? (
-          <Box sx={{ mb: 2, textAlign: 'center' }}>
-            <Typography color="error" align="center" sx={{ mb: 1 }}>
-              {error}
-            </Typography>
-            <Button onClick={handleRetry} variant="outlined" size="small">
-              Try Again
-            </Button>
-          </Box>
-        ) : (
-          <>
-            <Box id="qr-reader" sx={{ width: '100%', height: 250, mb: 2 }} />
-            {cameras.length > 1 && (
-              <Tooltip title="Switch Camera">
-                <IconButton onClick={switchCamera} sx={{ mb: 2 }}>
-                  <CameraRear />
-                </IconButton>
-              </Tooltip>
-            )}
-          </>
-        )}
-        <Button onClick={onClose} variant="contained" fullWidth>
-          Close
-        </Button>
-      </Box>
-    </Modal>
-  );
-});
-QRCodeScannerModal.displayName = 'QRCodeScannerModal';
+import QRCodeScannerModal from '../../components/QRCodeScanner';
 
 const CheckInOutForm = React.memo(({ type, onSubmit }) => {
   const [visitorId, setVisitorId] = useState('');
@@ -192,13 +49,10 @@ const CheckInOutForm = React.memo(({ type, onSubmit }) => {
         setVisitorId(visitor.id);
         setVisitorOptions([visitor]);
       } else {
-        // Handle case when visitor is not found
         console.error('Visitor not found');
-        // You might want to show an error message to the user here
       }
     } catch (error) {
       console.error('Error fetching visitor by ID:', error);
-      // Handle error, maybe show an error message to the user
     }
     setIsQRModalOpen(false);
   }, []);
