@@ -40,11 +40,13 @@ const QRCodeScannerModal = ({ isOpen, onClose, onScanSuccess }) => {
     };
 
     if (isOpen) {
+      console.log('Starting scanner...');
       startScanner();
     }
 
     return () => {
       if (scanner) {
+        console.log('Stopping scanner...');
         scanner.stop().catch(console.error);
       }
       if (errorTimeoutRef.current) {
